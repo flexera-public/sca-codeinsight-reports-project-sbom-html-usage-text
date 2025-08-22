@@ -1,0 +1,26 @@
+{
+    "reportName" : "SBOM Report with Usage Guidance",
+    "enableProjectPickerValue" : "false",
+    "reportOptions" : {
+        "option1" : 
+        {
+            "name" : "includeChildProjects",
+            "label" : "Include child project data? (True/False)",
+            "description" : "Should the report include data from child projects? <b>(True/False)</b>",
+            "type" : "string",
+            "defaultValue" : "True",
+            "required" : "true",
+            "order" : "1"
+        },
+        "option2" : 
+        {
+            "name" : "includeVulnerabilities",
+            "label" : "Include vulnerability presence? (True/False)",
+            "description" : "Should the report include the presence of vulnerabilities in a component? <b>(True/False)</b>",
+            "type" : "string",
+            "defaultValue" : "False",
+            "required" : "true",
+            "order" : "2"
+        }
+    }
+}
