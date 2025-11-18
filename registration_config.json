@@ -21,6 +21,16 @@
             "defaultValue" : "False",
             "required" : "true",
             "order" : "2"
+        },
+        "option3" : 
+        {
+            "name" : "footerText",
+            "label" : "Footer Text",
+            "description" : "Custom text to display in the footer of the report",
+            "type" : "string",
+            "defaultValue" : "",
+            "required" : "false",
+            "order" : "3"
         }
     }
 }
