@@ -178,6 +178,53 @@ def gather_data_for_report(baseURL, projectID, authToken, reportData):
     # Sort the inventory data by Component Name / Component Version / Selected License Name
     sortedInventoryData = OrderedDict(sorted(inventoryData.items(), key=lambda x: (x[1]['componentName'],  x[1]['componentVersionName'], x[1]['selectedLicenseName'])  ) )
 
+    # Calculate application-level summary data for review status
+    applicationSummaryData = {
+        "numApproved": 0,
+        "numRejected": 0,
+        "numNotReviewed": 0
+    }
+    
+    for inventoryID in sortedInventoryData:
+        approvalStatus = sortedInventoryData[inventoryID]["approvalStatus"]
+        if approvalStatus == "Approved":
+            applicationSummaryData["numApproved"] += 1
+        elif approvalStatus == "Rejected":
+            applicationSummaryData["numRejected"] += 1
+        elif approvalStatus == "Not Reviewed":
+            applicationSummaryData["numNotReviewed"] += 1
+
+    # Calculate project-level summary data for review status
+    projectSummaryData = {
+        "projectNames": [],
+        "numApproved": [],
+        "numRejected": [],
+        "numNotReviewed": []
+    }
+    
+    for project in flatProjectList:
+        projectName = project["projectName"]
+        projectSummaryData["projectNames"].append(projectName)
+        
+        # Count review statuses for this project
+        approved = 0
+        rejected = 0
+        notReviewed = 0
+        
+        for inventoryID in sortedInventoryData:
+            if sortedInventoryData[inventoryID]["projectName"] == projectName:
+                approvalStatus = sortedInventoryData[inventoryID]["approvalStatus"]
+                if approvalStatus == "Approved":
+                    approved += 1
+                elif approvalStatus == "Rejected":
+                    rejected += 1
+                elif approvalStatus == "Not Reviewed":
+                    notReviewed += 1
+        
+        projectSummaryData["numApproved"].append(approved)
+        projectSummaryData["numRejected"].append(rejected)
+        projectSummaryData["numNotReviewed"].append(notReviewed)
+
     # Build up the data to return for the
     reportData["projectHierarchy"] = projectHierarchy
     reportData["topLevelProjectName"] = topLevelProjectName
@@ -187,6 +234,8 @@ def gather_data_for_report(baseURL, projectID, authToken, reportData):
     reportData["reportOptions"] = reportOptions
     reportData["projectInventoryCount"] = projectInventoryCount
     reportData["applicationDetails"] = applicationDetails
+    reportData["applicationSummaryData"] = applicationSummaryData
+    reportData["projectSummaryData"] = projectSummaryData
 
     return reportData
 

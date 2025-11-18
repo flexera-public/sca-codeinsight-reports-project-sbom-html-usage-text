@@ -28,6 +28,8 @@ def generate_html_report(reportData):
     projectList = reportData["flatProjectList"]
     reportOptions = reportData["reportOptions"]
     projectInventoryCount = reportData["projectInventoryCount"]
+    applicationSummaryData = reportData["applicationSummaryData"]
+    projectSummaryData = reportData["projectSummaryData"]
     applicationDetails = projectName
  
     scriptDirectory = os.path.dirname(os.path.realpath(__file__))
@@ -105,6 +107,28 @@ def generate_html_report(reportData):
     #---------------------------------------------------------------------------------------------------
     html_ptr.write("<!-- BEGIN BODY -->\n")  
 
+    #######################################################################
+    #  Create table to hold the application summary charts.
+    #  js script itself is added later
+    html_ptr.write("<table id='applicationSummary' class='table' style='width:90%'>\n")
+    html_ptr.write("    <thead>\n")
+    html_ptr.write("        <tr>\n")
+    if len(projectList) > 1:
+        html_ptr.write("            <th colspan='8' class='text-center'><h4>Application Summary</h4></th>\n") 
+    else:
+        html_ptr.write("            <th colspan='8' class='text-center'><h4>%s Summary</h4></th>\n" %projectName) 
+    html_ptr.write("        </tr>\n") 
+    html_ptr.write("    </thead>\n")
+    html_ptr.write("</table>\n")
+    
+    html_ptr.write("<div class='container'>\n")
+    html_ptr.write("    <div class='row'>\n")
+    html_ptr.write("        <div class='col-sm'>\n")
+    html_ptr.write("            <canvas id='applicationInventoryReviews'></canvas>\n")
+    html_ptr.write("         </div>\n")
+    html_ptr.write("    </div>\n")
+    html_ptr.write("</div>\n")
+
 
     # If there is some sort of hierarchy then show specific project summaries
     if len(projectList) > 1:
@@ -116,8 +140,8 @@ def generate_html_report(reportData):
         # We need a minimum size to cover font as well
         if canvasHeight < 180:
             canvasHeight = 180
-        # The entire column needs to hold the three canvas items
-        columnHeight = canvasHeight *3
+        # The entire column needs to hold the chart
+        columnHeight = canvasHeight
 
         html_ptr.write("<hr class='small'>\n")
 
@@ -137,7 +161,14 @@ def generate_html_report(reportData):
         html_ptr.write("    <div class='row'>\n")
 
         html_ptr.write("        <div class='col-sm'>\n")
+        html_ptr.write("<h6 class='gray' style='padding-top: 10px;'><center>Project Hierarchy</center></h6>") 
         html_ptr.write("            <div id='project_hierarchy'></div>\n")
+        
+        html_ptr.write("        </div>\n")
+        html_ptr.write("        <div class='col-sm' style='height: %spx;'>\n" %(columnHeight) )
+        html_ptr.write("            <div class='col-sm' style='height: %spx'>\n"%(canvasHeight))
+        html_ptr.write("               <canvas id='projectInventoryReviews'></canvas>\n")
+        html_ptr.write("             </div>\n")
         html_ptr.write("        </div>\n")
         html_ptr.write("    </div>\n")
         html_ptr.write("</div>\n")
@@ -215,13 +246,13 @@ def generate_html_report(reportData):
 
         # Apply color styling based on approval status
         if approvalStatus == "Not Reviewed":
-            html_ptr.write("            <td class='text-left'><span style='color: #007bff;'>%s</span></td>\n" %(approvalStatus))
+            html_ptr.write("            <td class='text-left' data-search='%s'><span style='color: #007bff;'>%s</span></td>\n" %(approvalStatus, approvalStatus))
         elif approvalStatus == "Approved":
-            html_ptr.write("            <td class='text-left' style='color: green;'>%s</td>\n" %(approvalStatus))
+            html_ptr.write("            <td class='text-left' data-search='%s' style='color: green;'>%s</td>\n" %(approvalStatus, approvalStatus))
         elif approvalStatus == "Rejected":
-            html_ptr.write("            <td class='text-left' style='color: red;'>%s</td>\n" %(approvalStatus))
+            html_ptr.write("            <td class='text-left' data-search='%s' style='color: red;'>%s</td>\n" %(approvalStatus, approvalStatus))
         else:
-            html_ptr.write("            <td class='text-left'>%s</td>\n" %(approvalStatus))
+            html_ptr.write("            <td class='text-left' data-search='%s'>%s</td>\n" %(approvalStatus, approvalStatus))
         
         html_ptr.write("            <td class='text-left'>%s</td>\n" %(usageText))
 
@@ -243,6 +274,7 @@ def generate_html_report(reportData):
     #---------------------------------------------------------------------------------------------------
     html_ptr.write("<!-- BEGIN FOOTER -->\n")
     html_ptr.write("<div class='report-footer'>\n")
+    html_ptr.write("  <div style='float:left'>%s</div>\n" %reportOptions.get("footerText", ""))
     html_ptr.write("  <div style='float:right'>Generated on %s</div>\n" %reportTimeStamp)
     html_ptr.write("<br>\n")
     html_ptr.write("  <div style='float:right'>Report Version: %s</div>\n" %_version.__version__)
@@ -261,6 +293,7 @@ def generate_html_report(reportData):
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>  
     <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.10/jstree.min.js"></script>
     ''')
 
@@ -270,17 +303,24 @@ def generate_html_report(reportData):
     if len(projectList) > 1:
         # The project names are included so the inventory row is column 1
         sortByColumn = 1
+        approvalStatusColumn = 4
     else:
         # Inventory items are the first column
         sortByColumn = 0
+        approvalStatusColumn = 3
     
     add_inventory_datatable(html_ptr, sortByColumn)
 
-    
+    # Add the common chartjs config
+    add_default_chart_options(html_ptr)
+    # Add the js for the application summary stacked bar charts
+    generate_application_summary_chart(html_ptr, applicationSummaryData, approvalStatusColumn)
 
     if len(projectList) > 1:
         # Add the js for the project summary stacked bar charts
         generate_project_hierarchy_tree(html_ptr, projectList, projectInventoryCount)
+        # Add the js for the project summary charts
+        generate_project_summary_charts(html_ptr, projectSummaryData, approvalStatusColumn)
 
 
     html_ptr.write("</script>\n")
@@ -312,13 +352,70 @@ def add_inventory_datatable(html_ptr, sortByColumn):
     # Add the js for inventory datatable
     html_ptr.write('''
 
+            var inventoryTable;
             $(document).ready(function (){
-                var table = $('#inventoryData').DataTable({
+                inventoryTable = $('#inventoryData').DataTable({
                     "order": [ ''' +  str(sortByColumn) + ''', 'asc' ],
                     "lengthMenu": [ [25, 50, 100, -1], [25, 50, 100, "All"] ],
                 });
             });
         ''')    
+
+#----------------------------------------------------------------------------------------#
+def generate_application_summary_chart(html_ptr, applicationSummaryData):
+    logger.info("        Entering generate_application_summary_chart")
+
+    cvssVersion = applicationSummaryData["cvssVersion"]
+   
+    html_ptr.write(''' 
+    
+    var applicationVulnerabilities= document.getElementById("applicationVulnerabilities");
+    var applicationVulnerabilityChart = new Chart(applicationVulnerabilities, {
+        type: 'horizontalBar',
+        data: {
+            datasets: [''')
+
+    if cvssVersion == "3.x":
+        html_ptr.write(''' {       
+                // Critical Vulnerabilities
+                label: 'Critical',
+                data: [%s],
+                backgroundColor: "#400000"
+                },''' %applicationSummaryData["numCriticalVulnerabilities"])      
+
+    html_ptr.write('''   
+            {
+                // High Vulnerabilities
+                label: 'High',
+                data: [%s],
+                backgroundColor: "#C00000"
+            },{
+                // Medium Vulnerabilities
+                label: 'Medium',
+                data: [%s],
+                backgroundColor: "#FFA500"
+            },{
+                // Low Vulnerabilities
+                label: 'Low',
+                data: [%s],
+                backgroundColor: "#FFFF00"
+            },{
+                // N/A Vulnerabilities
+                label: 'N/A',
+                data: [%s],
+                backgroundColor: "#D3D3D3"
+            },
+            ]
+        },
+
+        options: defaultBarChartOptions,
+        
+    });
+
+    applicationVulnerabilityChart.options.tooltips.titleFontSize = 0
+    
+    ''' %(applicationSummaryData["numHighVulnerabilities"], applicationSummaryData["numMediumVulnerabilities"], applicationSummaryData["numLowVulnerabilities"], applicationSummaryData["numNoneVulnerabilities"]) )
+
 
 #----------------------------------------------------------------------------------------#
 def generate_project_hierarchy_tree(html_ptr, projectHierarchy, projectInventoryCount):
@@ -367,6 +464,173 @@ def generate_project_hierarchy_tree(html_ptr, projectHierarchy, projectInventory
 
     ''' )
 
+
+#----------------------------------------------------------------------------------------#
+def add_default_chart_options(html_ptr):
+    # Add common defaults for display charts
+    html_ptr.write('''  
+        var defaultBarChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+            padding: {
+                bottom: 25  //set that fits the best
+            }
+        },
+        tooltips: {
+            enabled: true,
+            yAlign: 'center'
+        },
+        title: {
+            display: true,
+            fontColor: "#323E48"
+        },
+
+        scales: {
+            xAxes: [{
+                ticks: {
+                    beginAtZero:true,
+                    fontSize:11,
+                    fontColor: "#323E48",
+                    precision:0
+
+                },
+                scaleLabel:{
+                    display:false
+                },
+                gridLines: {
+                }, 
+                stacked: true
+            }],
+            yAxes: [{
+                gridLines: {
+                    display:false,
+                    color: "#fff",
+                    zeroLineColor: "#fff",
+                    zeroLineWidth: 0,
+                    fontColor: "#323E48"
+                },
+                ticks: {
+                    fontSize:11,
+                    fontColor: "#323E48"
+                },
+
+                stacked: true
+            }]
+        },
+        legend:{
+            display:false
+        },
+        
+    };  ''')
+
+#----------------------------------------------------------------------------------------#
+def generate_application_summary_chart(html_ptr, applicationSummaryData, approvalStatusColumn):
+    logger.info("    Entering generate_application_summary_chart")
+   
+    html_ptr.write(''' 
+    
+    var applicationInventoryReviews = document.getElementById("applicationInventoryReviews");
+    var applicationInventoryReviewChart = new Chart(applicationInventoryReviews, {
+        type: 'horizontalBar',
+        data: {
+            datasets: [{
+                // Approved Inventory Items
+                label: 'Approved',
+                data: [%s],
+                backgroundColor: "#28a745"
+            },{
+                // Rejected Inventory Items
+                label: 'Rejected',
+                data: [%s],
+                backgroundColor: "#dc3545"
+            },{
+                // Not Reviewed Inventory Items
+                label: 'Not Reviewed',
+                data: [%s],
+                backgroundColor: "#007bff"
+            }]
+        },
+
+        options: defaultBarChartOptions,
+        
+    });
+
+    applicationInventoryReviewChart.options.tooltips.titleFontSize = 0
+    
+    // Add click event handler for filtering
+    applicationInventoryReviews.onclick = function(evt) {
+        var activePoints = applicationInventoryReviewChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+        if (activePoints.length > 0) {
+            var clickedElement = activePoints[0];
+            var datasetIndex = clickedElement._datasetIndex;
+            var statusLabel = applicationInventoryReviewChart.data.datasets[datasetIndex].label;
+            
+            // Filter the datatable based on approval status
+            if (inventoryTable) {
+                inventoryTable.search('').columns().search('');
+                inventoryTable.column(%s).search('^' + statusLabel + '$', true, false).draw();
+            }
+        }
+    };
+    
+    ''' %(applicationSummaryData["numApproved"], applicationSummaryData["numRejected"], applicationSummaryData["numNotReviewed"], approvalStatusColumn) )
+
+#----------------------------------------------------------------------------------------#
+def generate_project_summary_charts(html_ptr, projectSummaryData, approvalStatusColumn):
+    logger.info("    Entering generate_project_summary_charts")
+
+    html_ptr.write(''' 
+    
+    var projectInventoryReviews = document.getElementById("projectInventoryReviews");
+    var projectInventoryReviewChart = new Chart(projectInventoryReviews, {
+        type: 'horizontalBar',
+        data: {
+            labels: %s,
+            datasets: [{
+                // Approved Inventory Items
+                label: 'Approved',
+                data: %s,
+                backgroundColor: "#28a745"
+            },{
+                // Rejected Inventory Items
+                label: 'Rejected',
+                data: %s,
+                backgroundColor: "#dc3545"
+            },{
+                // Not Reviewed Inventory Items
+                label: 'Not Reviewed',
+                data: %s,
+                backgroundColor: "#007bff"
+            }]
+        },
+
+        options: defaultBarChartOptions,
+        
+    });
+    projectInventoryReviewChart.options.title.text = "Inventory Review Status"
+    
+    // Add click event handler for filtering
+    projectInventoryReviews.onclick = function(evt) {
+        var activePoints = projectInventoryReviewChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+        if (activePoints.length > 0) {
+            var clickedElement = activePoints[0];
+            var datasetIndex = clickedElement._datasetIndex;
+            var dataIndex = clickedElement._index;
+            var statusLabel = projectInventoryReviewChart.data.datasets[datasetIndex].label;
+            var projectName = projectInventoryReviewChart.data.labels[dataIndex];
+            
+            // Filter the datatable based on both project name and approval status
+            if (inventoryTable) {
+                inventoryTable.search('').columns().search('');
+                // Column 0 is project name, column 4 is approval status for multi-project view
+                inventoryTable.column(0).search('^' + projectName + '$', true, false);
+                inventoryTable.column(%s).search('^' + statusLabel + '$', true, false).draw();
+            }
+        }
+    };
+    
+    ''' %(projectSummaryData["projectNames"], projectSummaryData["numApproved"], projectSummaryData["numRejected"], projectSummaryData["numNotReviewed"], approvalStatusColumn) )
 
 
 
