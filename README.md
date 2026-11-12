@@ -34,17 +34,17 @@ For Windows:
 Open a command prompt at the location:
 $CODEINSIGHT_INSTALLDIR/custom_report_scripts/sca-codeinsight-reports-project-sbom
 Run the following command
-python create_report.py -pid <projectID> -reportOpts "{\"includeChildProjects\": \"True\", \"includeVulnerabilities\": \"False\"}"
+python create_report.py -pid <projectID> -reportOpts "{\"includeChildProjects\": \"True\", \"includeVulnerabilities\": \"False\", \"includeInventoryUsage\": \"True\"}"
 
 For Linux:
 Open a terminal at the location:
 $CODEINSIGHT_INSTALLDIR/custom_report_scripts/sca-codeinsight-reports-project-sbom
 Run the following command:
-python3 create_report.py -pid <projectID> -reportOpts '{"includeChildProjects":"True","includeVulnerabilities":"False"}'
+python3 create_report.py -pid <projectID> -reportOpts '{"includeChildProjects":"True","includeVulnerabilities":"False","includeInventoryUsage":"True"}'
 
 Notes:
 The -pid flag is mandatory.
-The -reportOpts flag is optional. If omitted, all values will default to "True".
+The -reportOpts flag is optional. By default, child projects and inventory usage are included, and vulnerabilities are excluded. Inventory usage also defaults to "True" when omitted from -reportOpts.
 Example: python3 create_report.py -pid <projectID>
 
 Report Locations:
@@ -97,6 +97,7 @@ The following report options can be set once the report generation has been init
 
 - Including child projects (True/False) - Determine if child project data will be included or not.
 - Include presence of vulnerabilities - (True/False) - Display if the component has any vulnerabilities or not.
+- Include inventory usage - (True/False) - Display the Usage column in the HTML and XLSX reports. Defaults to True; the Usage Text column remains visible.
 
 The above values will be used in place of the **Project Name** for any project references within the generated artifacts to allow users the ability abstract the project name for the application SBOM report.
 

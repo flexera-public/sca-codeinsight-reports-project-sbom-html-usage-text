@@ -22,7 +22,17 @@
             "required" : "true",
             "order" : "2"
         },
-        "option3" : 
+        "option3" :
+        {
+            "name" : "includeInventoryUsage",
+            "label" : "Include inventory usage? (True/False)",
+            "description" : "Should the report include inventory usage? <b>(True/False)</b>",
+            "type" : "string",
+            "defaultValue" : "True",
+            "required" : "true",
+            "order" : "3"
+        },
+        "option4" :
         {
             "name" : "footerText",
             "label" : "Footer Text",
@@ -30,7 +40,7 @@
             "type" : "string",
             "defaultValue" : "",
             "required" : "false",
-            "order" : "3"
+            "order" : "4"
         }
     }
 }
