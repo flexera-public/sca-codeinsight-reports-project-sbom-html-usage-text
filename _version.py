@@ -8,4 +8,4 @@ Created On : Wed Oct 06 2021
 File : _version.py
 '''
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"

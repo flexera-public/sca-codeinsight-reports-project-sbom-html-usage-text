@@ -179,7 +179,8 @@ def generate_html_report(reportData):
 
     html_ptr.write("    <thead>\n")
     html_ptr.write("        <tr>\n")
-    html_ptr.write("            <th colspan='9' class='text-center'><p style='font-size:24px'>Software Bill of Materials</p>\n") 
+    columnCount = 5 + (len(projectList) > 1) + reportOptions["includeInventoryUsage"] + reportOptions["includeVulnerabilities"]
+    html_ptr.write("            <th colspan='%s' class='text-center'><p style='font-size:24px'>Software Bill of Materials</p>\n" %columnCount)
     html_ptr.write("            <p style='font-size:16px'>%s</p></th>\n" %(applicationDetails))
 
     html_ptr.write("        </tr>\n") 
@@ -193,7 +194,8 @@ def generate_html_report(reportData):
     html_ptr.write("            <th style='width: 15%' class='text-center'>LICENSE</th>\n") 
     html_ptr.write("            <th style='width: 5%' class='text-center'>Approval Status</th>\n") 
     html_ptr.write("            <th style='width: 25%' class='text-center'>Usage Text</th>\n")
-
+    if reportOptions["includeInventoryUsage"]:
+        html_ptr.write("            <th style='width: 25%' class='text-center'>Usage</th>\n")
     if reportOptions["includeVulnerabilities"]:
         html_ptr.write("            <th style='width: 5%' class='text-center'>VULNERABILITES</th>\n") 
 
@@ -255,6 +257,75 @@ def generate_html_report(reportData):
             html_ptr.write("            <td class='text-left' data-search='%s'>%s</td>\n" %(approvalStatus, approvalStatus))
         
         html_ptr.write("            <td class='text-left'>%s</td>\n" %(usageText))
+        # Add data-search attributes for filtering by individual properties
+        usage_value = inventoryData[inventoryID]["usage"]
+        # Extract individual property values for filtering
+        part_of_product = ""
+        distribution_type = ""
+        linking = ""
+        modified = ""
+        encrypted = ""
+        
+        # Parse the usage string to extract individual property values
+        if "Part of Product:" in usage_value:
+            start = usage_value.find("Part of Product:") + len("Part of Product:")
+            if start > len("Part of Product:"):
+                end = usage_value.find("<br>", start)
+                if end == -1:
+                    end = len(usage_value)
+                part_of_product = usage_value[start:end].strip()
+                
+        if "Distribution Type:" in usage_value:
+            start = usage_value.find("Distribution Type:") + len("Distribution Type:")
+            if start > len("Distribution Type:"):
+                end = usage_value.find("<br>", start)
+                if end == -1:
+                    end = len(usage_value)
+                distribution_type = usage_value[start:end].strip()
+                
+        if "Linking:" in usage_value:
+            start = usage_value.find("Linking:") + len("Linking:")
+            if start > len("Linking:"):
+                end = usage_value.find("<br>", start)
+                if end == -1:
+                    end = len(usage_value)
+                linking = usage_value[start:end].strip()
+                
+        if "Modified:" in usage_value:
+            start = usage_value.find("Modified:") + len("Modified:")
+            if start > len("Modified:"):
+                end = usage_value.find("<br>", start)
+                if end == -1:
+                    end = len(usage_value)
+                modified = usage_value[start:end].strip()
+                
+        if "Encrypted:" in usage_value:
+            start = usage_value.find("Encrypted:") + len("Encrypted:")
+            if start > len("Encrypted:"):
+                end = usage_value.find("<br>", start)
+                if end == -1:
+                    end = len(usage_value)
+                encrypted = usage_value[start:end].strip()
+        
+        # Create enhanced data-search attributes with property key:value format 
+        # for better AND search filtering
+        search_values = []
+        if part_of_product:
+            search_values.append(f"Part of Product:{part_of_product}")
+        if distribution_type:
+            search_values.append(f"Distribution Type:{distribution_type}")
+        if linking:
+            search_values.append(f"Linking:{linking}")
+        if modified:
+            search_values.append(f"Modified:{modified}")
+        if encrypted:
+            search_values.append(f"Encrypted:{encrypted}")
+        
+        search_string = " ".join(search_values)  # Space-separated for DataTables
+        
+        # Write usage with data attributes for individual property filtering
+        if reportOptions["includeInventoryUsage"]:
+            html_ptr.write("            <td class='text-left' data-search='%s'>%s</td>\n" % (search_string, usage_value))
 
 
         if reportOptions["includeVulnerabilities"]:
@@ -357,6 +428,9 @@ def add_inventory_datatable(html_ptr, sortByColumn):
                 inventoryTable = $('#inventoryData').DataTable({
                     "order": [ ''' +  str(sortByColumn) + ''', 'asc' ],
                     "lengthMenu": [ [25, 50, 100, -1], [25, 50, 100, "All"] ],
+                    "searching": true,
+                    "paging": true,
+                    "info": true
                 });
             });
         ''')    
