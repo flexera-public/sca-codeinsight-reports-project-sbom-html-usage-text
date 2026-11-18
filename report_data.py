@@ -144,6 +144,7 @@ def gather_data_for_report(baseURL, projectID, authToken, reportData):
                 usageText = inventoryItem["usageText"]
             else:
                 usageText = ""
+            usage = inventoryItem.get("usageSummary", "")
             hasVulnerabilities = inventoryItem["hasVulnerabilities"]
             # If there is no specific version just leave it blank
             if componentVersionName == None:
@@ -168,6 +169,7 @@ def gather_data_for_report(baseURL, projectID, authToken, reportData):
                 "inventoryLink" : inventoryLink,
                 "approvalStatus" : approvalStatus,
                 "usageText" : usageText,
+                "usage" : usage,
                 "projectLink" : projectLink,
                 "hasVulnerabilities" : hasVulnerabilities,
                 # "applicationNameVersion" : applicationNameVersion

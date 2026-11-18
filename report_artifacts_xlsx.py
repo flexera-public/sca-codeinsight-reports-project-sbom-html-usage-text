@@ -106,9 +106,13 @@ def generate_xlsx_report(reportData):
     tableHeaders.append("Usage Text")
     column+=1
 
+    if reportOptions["includeInventoryUsage"]:
+        detailsWorksheet.set_column(column, column, 40)
+        tableHeaders.append("Usage")
+        column+=1
 
     if reportOptions["includeVulnerabilities"]:
-        detailsWorksheet.set_column(column, column, 25) 
+        detailsWorksheet.set_column(column, column, 25)
         tableHeaders.append("VULNERABILITIES")
         column+=1
 
@@ -183,6 +187,10 @@ def generate_xlsx_report(reportData):
 
         detailsWorksheet.write(row, column, usageText, cellFormat)
         column+=1
+
+        if reportOptions["includeInventoryUsage"]:
+            detailsWorksheet.write(row, column, inventoryData[inventoryID]["usage"], cellFormat)
+            column+=1
 
         if reportOptions["includeVulnerabilities"]:
             if hasVulnerabilities:

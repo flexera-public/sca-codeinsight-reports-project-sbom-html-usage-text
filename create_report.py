@@ -49,7 +49,7 @@ Linux:
 
 Note:
   - The -pid flag is mandatory.
-  - The -reportOpts flag is optional. If omitted, all values will default to "includeChildProjects":"True" and "includeVulnerabilities":"False".
+    - The -reportOpts flag is optional. Defaults: "includeChildProjects":"True", "includeVulnerabilities":"False", and "includeInventoryUsage":"True".
   Example: python3 create_report.py -pid <projectID>
 """
 )
@@ -269,6 +269,7 @@ def verifyOptions(reportOptions):
 
     includeChildProjects = reportOptions["includeChildProjects"]
     includeVulnerabilities = reportOptions["includeVulnerabilities"]
+    includeInventoryUsage = reportOptions.get("includeInventoryUsage", "True")
 
 
     if includeChildProjects.lower() in trueOptions:
@@ -284,6 +285,13 @@ def verifyOptions(reportOptions):
         reportOptions["includeVulnerabilities"] = False
     else:
         reportOptions["errorMsg"].append("Invalid option for including vulnerability data: <b>%s</b>.  Valid options are <b>True/False</b>" %includeVulnerabilities)
+
+    if includeInventoryUsage.lower() in trueOptions:
+        reportOptions["includeInventoryUsage"] = True
+    elif includeInventoryUsage.lower() in falseOptions:
+        reportOptions["includeInventoryUsage"] = False
+    else:
+        reportOptions["errorMsg"].append("Invalid option for including inventory usage: <b>%s</b>.  Valid options are <b>True/False</b>" %includeInventoryUsage)
 
 
     if not reportOptions["errorMsg"]:
